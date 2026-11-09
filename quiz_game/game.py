@@ -91,12 +91,24 @@ class QuizGame:
         self.show_result(correct_count, total)
 
     def show_result(self, correct_count, total):
-        """모든 문제를 푼 뒤 결과(맞힌 개수, 100점 만점 점수)를 보여 주고 점수를 돌려준다."""
+        """모든 문제를 푼 뒤 결과를 보여 주고, 최고 점수와 비교해 갱신한다. 점수를 돌려준다."""
         score = round(correct_count / total * 100)
         print(LINE)
         print(f"🏆 결과: {total}문제 중 {correct_count}문제 정답! ({score}점)")
+        if self.update_best_score(score):
+            print("🎉 새로운 최고 점수입니다!")
+            self.save_state()
+        else:
+            print(f"📌 현재 최고 점수: {self.best_score}점")
         print(LINE)
         return score
+
+    def update_best_score(self, score):
+        """이번 점수가 최고 점수보다 높으면(또는 첫 기록이면) 갱신하고 True를 돌려준다."""
+        if self.best_score is None or score > self.best_score:
+            self.best_score = score
+            return True
+        return False
 
     def add_quiz(self):
         """문제, 선택지 4개, 정답 번호를 입력받아 새 퀴즈를 등록하고 파일에 저장한다."""
@@ -132,10 +144,6 @@ class QuizGame:
         else:
             print("\n⚠️ 퀴즈는 추가되었지만 파일 저장에 실패했습니다. 종료할 때 다시 저장을 시도합니다.")
 
-    # ------------------------------------------------------------------
-    # 메뉴 기능 (다음 단계에서 구현 예정)
-    # ------------------------------------------------------------------
-
     def show_quizzes(self):
         """등록된 퀴즈의 번호와 문제를 보여 준다. (정답은 보여 주지 않는다)"""
         if not self.quizzes:
@@ -149,7 +157,11 @@ class QuizGame:
         print(THIN_LINE)
 
     def show_score(self):
-        print("\n🚧 점수 확인 기능은 준비 중입니다.")
+        """최고 점수를 보여 준다. 아직 퀴즈를 푼 적이 없으면 안내한다."""
+        if self.best_score is None:
+            print("\n📭 아직 퀴즈를 푼 기록이 없습니다. '1. 퀴즈 풀기'로 도전해 보세요!")
+            return
+        print(f"\n🏆 최고 점수: {self.best_score}점")
 
     # ------------------------------------------------------------------
     # 파일 저장/불러오기 (state.json)
