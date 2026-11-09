@@ -1,6 +1,7 @@
 """게임 전체 흐름(메뉴 표시, 입력 처리, 기능 실행)을 관리하는 QuizGame 클래스."""
 
 from quiz_game.default_data import create_default_quizzes
+from quiz_game.quiz import Quiz
 
 LINE = "=" * 40
 THIN_LINE = "-" * 40
@@ -56,10 +57,42 @@ class QuizGame:
         print(LINE)
 
     # ------------------------------------------------------------------
-    # 메뉴 기능 (다음 단계에서 구현 예정)
+    # 메뉴 기능
     # ------------------------------------------------------------------
     def play_quiz(self):
-        print("\n🚧 퀴즈 풀기 기능은 준비 중입니다.")
+        """저장된 퀴즈를 차례대로 출제하고, 문제마다 정답 여부를 알려 준다."""
+        if not self.quizzes:
+            print("\n📭 등록된 퀴즈가 없습니다. 먼저 '2. 퀴즈 추가'에서 퀴즈를 등록해 주세요.")
+            return
+
+        total = len(self.quizzes)
+        print(f"\n📝 퀴즈를 시작합니다! (총 {total}문제)")
+
+        correct_count = 0  # 맞힌 문제 수
+        for number, quiz in enumerate(self.quizzes, start=1):
+            print(THIN_LINE)
+            quiz.display(number)
+            answer = self.read_int("정답 입력: ", 1, Quiz.CHOICE_COUNT)
+            if quiz.is_correct(answer):
+                correct_count += 1
+                print("✅ 정답입니다!")
+            else:
+                print(f"❌ 오답입니다. 정답은 {quiz.answer}번 '{quiz.correct_choice}'입니다.")
+            print()
+
+        self.show_result(correct_count, total)
+
+    def show_result(self, correct_count, total):
+        """모든 문제를 푼 뒤 결과(맞힌 개수, 100점 만점 점수)를 보여 주고 점수를 돌려준다."""
+        score = round(correct_count / total * 100)
+        print(LINE)
+        print(f"🏆 결과: {total}문제 중 {correct_count}문제 정답! ({score}점)")
+        print(LINE)
+        return score
+
+    # ------------------------------------------------------------------
+    # 메뉴 기능 (다음 단계에서 구현 예정)
+    # ------------------------------------------------------------------
 
     def add_quiz(self):
         print("\n🚧 퀴즈 추가 기능은 준비 중입니다.")
