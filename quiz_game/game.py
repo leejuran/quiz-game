@@ -1,5 +1,7 @@
 """게임 전체 흐름(메뉴 표시, 입력 처리, 기능 실행)을 관리하는 QuizGame 클래스."""
 
+from quiz_game.default_data import create_default_quizzes
+
 LINE = "=" * 40
 THIN_LINE = "-" * 40
 
@@ -8,6 +10,9 @@ class QuizGame:
     """메뉴를 보여 주고, 사용자가 고른 기능을 실행하는 클래스."""
 
     def __init__(self):
+        # 게임에서 사용할 퀴즈 목록 (Quiz 객체들의 리스트)
+        self.quizzes = create_default_quizzes()
+
         # (메뉴 이름, 실행할 메서드) 목록. 실행할 메서드가 None이면 종료를 뜻한다.
         self.menu_items = [
             ("퀴즈 풀기", self.play_quiz),
