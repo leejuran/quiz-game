@@ -98,12 +98,43 @@ class QuizGame:
         print(LINE)
         return score
 
+    def add_quiz(self):
+        """문제, 선택지 4개, 정답 번호를 입력받아 새 퀴즈를 등록하고 파일에 저장한다."""
+        print("\n📌 새로운 퀴즈를 추가합니다.\n")
+
+        # 1) 문제 입력 (빈 값, 이미 있는 문제는 다시 입력)
+        existing_questions = [quiz.question for quiz in self.quizzes]
+        while True:
+            question = self.read_text("문제를 입력하세요: ")
+            if question in existing_questions:
+                print("⚠️ 이미 등록된 문제입니다. 다른 문제를 입력하세요.")
+                continue
+            break
+
+        # 2) 선택지 4개 입력 (빈 값, 중복된 선택지는 다시 입력)
+        choices = []
+        for number in range(1, Quiz.CHOICE_COUNT + 1):
+            while True:
+                choice = self.read_text(f"선택지 {number}: ")
+                if choice in choices:
+                    print("⚠️ 이미 입력한 선택지입니다. 다른 내용을 입력하세요.")
+                    continue
+                choices.append(choice)
+                break
+
+        # 3) 정답 번호 입력 (1~4)
+        answer = self.read_int(f"정답 번호 (1-{Quiz.CHOICE_COUNT}): ", 1, Quiz.CHOICE_COUNT)
+
+        # 4) 퀴즈 등록 후 바로 파일에 저장
+        self.quizzes.append(Quiz(question, choices, answer))
+        if self.save_state():
+            print(f"\n✅ 퀴즈가 추가되었습니다! (총 {len(self.quizzes)}개)")
+        else:
+            print("\n⚠️ 퀴즈는 추가되었지만 파일 저장에 실패했습니다. 종료할 때 다시 저장을 시도합니다.")
+
     # ------------------------------------------------------------------
     # 메뉴 기능 (다음 단계에서 구현 예정)
     # ------------------------------------------------------------------
-
-    def add_quiz(self):
-        print("\n🚧 퀴즈 추가 기능은 준비 중입니다.")
 
     def show_quizzes(self):
         print("\n🚧 퀴즈 목록 기능은 준비 중입니다.")
@@ -187,6 +218,14 @@ class QuizGame:
     # ------------------------------------------------------------------
     # 입력 처리
     # ------------------------------------------------------------------
+    def read_text(self, prompt):
+        """비어 있지 않은 글자를 입력받는다. 앞뒤 공백은 제거한다."""
+        while True:
+            text = input(prompt).strip()
+            if text:
+                return text
+            print("⚠️ 빈 값은 입력할 수 없습니다. 내용을 입력하세요.")
+
     def read_int(self, prompt, minimum, maximum):
         """minimum~maximum 범위의 정수를 입력받는다. 올바른 값이 들어올 때까지 반복한다."""
         guide = f"{minimum}-{maximum} 사이의 숫자를 입력하세요."
