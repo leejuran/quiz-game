@@ -137,7 +137,16 @@ class QuizGame:
     # ------------------------------------------------------------------
 
     def show_quizzes(self):
-        print("\n🚧 퀴즈 목록 기능은 준비 중입니다.")
+        """등록된 퀴즈의 번호와 문제를 보여 준다. (정답은 보여 주지 않는다)"""
+        if not self.quizzes:
+            print("\n📭 등록된 퀴즈가 없습니다. '2. 퀴즈 추가'에서 퀴즈를 등록해 주세요.")
+            return
+
+        print(f"\n📋 등록된 퀴즈 목록 (총 {len(self.quizzes)}개)\n")
+        print(THIN_LINE)
+        for number, quiz in enumerate(self.quizzes, start=1):
+            print(f"[{number}] {quiz.question}")
+        print(THIN_LINE)
 
     def show_score(self):
         print("\n🚧 점수 확인 기능은 준비 중입니다.")
