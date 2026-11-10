@@ -7,6 +7,8 @@
 - QuizGame     (이 파일)         : 위 부품들을 사용해 게임을 진행
 """
 
+import random
+
 from quiz_game.default_data import create_default_quizzes
 from quiz_game.input_utils import read_int, read_text
 from quiz_game.quiz import Quiz
@@ -81,11 +83,13 @@ class QuizGame:
             print("\n📭 등록된 퀴즈가 없습니다. 먼저 '2. 퀴즈 추가'에서 퀴즈를 등록해 주세요.")
             return
 
-        total = len(self.quizzes)
-        print(f"\n📝 퀴즈를 시작합니다! (총 {total}문제)")
+        # 원본 목록 순서는 그대로 두고, 순서를 무작위로 섞은 새 리스트로 출제한다.
+        selected = random.sample(self.quizzes, len(self.quizzes))
+        total = len(selected)
+        print(f"\n📝 퀴즈를 시작합니다! (총 {total}문제, 순서는 무작위)")
 
         correct_count = 0  # 맞힌 문제 수
-        for number, quiz in enumerate(self.quizzes, start=1):
+        for number, quiz in enumerate(selected, start=1):
             print(THIN_LINE)
             quiz.display(number)
             answer = read_int("정답 입력: ", 1, Quiz.CHOICE_COUNT)
