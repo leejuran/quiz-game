@@ -1,6 +1,14 @@
-"""게임 전체 흐름(메뉴 표시, 입력 처리, 기능 실행)을 관리하는 QuizGame 클래스."""
+"""게임 전체 흐름(메뉴 표시, 기능 실행, 저장/불러오기)을 관리하는 QuizGame 클래스.
+
+역할 분리
+- Quiz         (quiz.py)        : 퀴즈 한 문제
+- StateStorage (storage.py)     : state.json 파일 읽기/쓰기
+- input_utils  (input_utils.py) : 사용자 입력 검사
+- QuizGame     (이 파일)         : 위 부품들을 사용해 게임을 진행
+"""
 
 from quiz_game.default_data import create_default_quizzes
+from quiz_game.input_utils import read_int, read_text
 from quiz_game.quiz import Quiz
 from quiz_game.storage import StateFileError, StateStorage
 
@@ -38,7 +46,7 @@ class QuizGame:
         try:
             while True:
                 self.show_menu()
-                choice = self.read_int("선택: ", 1, len(self.menu_items))
+                choice = read_int("선택: ", 1, len(self.menu_items))
                 _, action = self.menu_items[choice - 1]
                 if action is None:
                     break
@@ -80,7 +88,7 @@ class QuizGame:
         for number, quiz in enumerate(self.quizzes, start=1):
             print(THIN_LINE)
             quiz.display(number)
-            answer = self.read_int("정답 입력: ", 1, Quiz.CHOICE_COUNT)
+            answer = read_int("정답 입력: ", 1, Quiz.CHOICE_COUNT)
             if quiz.is_correct(answer):
                 correct_count += 1
                 print("✅ 정답입니다!")
@@ -113,36 +121,37 @@ class QuizGame:
     def add_quiz(self):
         """문제, 선택지 4개, 정답 번호를 입력받아 새 퀴즈를 등록하고 파일에 저장한다."""
         print("\n📌 새로운 퀴즈를 추가합니다.\n")
+        question = self.ask_new_question()
+        choices = self.ask_choices()
+        answer = read_int(f"정답 번호 (1-{Quiz.CHOICE_COUNT}): ", 1, Quiz.CHOICE_COUNT)
 
-        # 1) 문제 입력 (빈 값, 이미 있는 문제는 다시 입력)
-        existing_questions = [quiz.question for quiz in self.quizzes]
-        while True:
-            question = self.read_text("문제를 입력하세요: ")
-            if question in existing_questions:
-                print("⚠️ 이미 등록된 문제입니다. 다른 문제를 입력하세요.")
-                continue
-            break
-
-        # 2) 선택지 4개 입력 (빈 값, 중복된 선택지는 다시 입력)
-        choices = []
-        for number in range(1, Quiz.CHOICE_COUNT + 1):
-            while True:
-                choice = self.read_text(f"선택지 {number}: ")
-                if choice in choices:
-                    print("⚠️ 이미 입력한 선택지입니다. 다른 내용을 입력하세요.")
-                    continue
-                choices.append(choice)
-                break
-
-        # 3) 정답 번호 입력 (1~4)
-        answer = self.read_int(f"정답 번호 (1-{Quiz.CHOICE_COUNT}): ", 1, Quiz.CHOICE_COUNT)
-
-        # 4) 퀴즈 등록 후 바로 파일에 저장
+        # 퀴즈 등록 후 바로 파일에 저장
         self.quizzes.append(Quiz(question, choices, answer))
         if self.save_state():
             print(f"\n✅ 퀴즈가 추가되었습니다! (총 {len(self.quizzes)}개)")
         else:
             print("\n⚠️ 퀴즈는 추가되었지만 파일 저장에 실패했습니다. 종료할 때 다시 저장을 시도합니다.")
+
+    def ask_new_question(self):
+        """새 문제를 입력받는다. 이미 등록된 문제면 다시 입력받는다."""
+        existing_questions = [quiz.question for quiz in self.quizzes]
+        while True:
+            question = read_text("문제를 입력하세요: ")
+            if question not in existing_questions:
+                return question
+            print("⚠️ 이미 등록된 문제입니다. 다른 문제를 입력하세요.")
+
+    def ask_choices(self):
+        """선택지 4개를 입력받는다. 이미 입력한 선택지와 같으면 다시 입력받는다."""
+        choices = []
+        for number in range(1, Quiz.CHOICE_COUNT + 1):
+            while True:
+                choice = read_text(f"선택지 {number}: ")
+                if choice not in choices:
+                    choices.append(choice)
+                    break
+                print("⚠️ 이미 입력한 선택지입니다. 다른 내용을 입력하세요.")
+        return choices
 
     def show_quizzes(self):
         """등록된 퀴즈의 번호와 문제를 보여 준다. (정답은 보여 주지 않는다)"""
@@ -235,32 +244,3 @@ class QuizGame:
             print(f"⚠️ 데이터를 저장하지 못했습니다: {error}")
             return False
         return True
-
-    # ------------------------------------------------------------------
-    # 입력 처리
-    # ------------------------------------------------------------------
-    def read_text(self, prompt):
-        """비어 있지 않은 글자를 입력받는다. 앞뒤 공백은 제거한다."""
-        while True:
-            text = input(prompt).strip()
-            if text:
-                return text
-            print("⚠️ 빈 값은 입력할 수 없습니다. 내용을 입력하세요.")
-
-    def read_int(self, prompt, minimum, maximum):
-        """minimum~maximum 범위의 정수를 입력받는다. 올바른 값이 들어올 때까지 반복한다."""
-        guide = f"{minimum}-{maximum} 사이의 숫자를 입력하세요."
-        while True:
-            raw = input(prompt).strip()  # 앞뒤 공백 제거
-            if not raw:
-                print(f"⚠️ 입력값이 없습니다. {guide}")
-                continue
-            try:
-                number = int(raw)
-            except ValueError:
-                print(f"⚠️ 잘못된 입력입니다. {guide}")
-                continue
-            if not minimum <= number <= maximum:
-                print(f"⚠️ 범위를 벗어난 숫자입니다. {guide}")
-                continue
-            return number
