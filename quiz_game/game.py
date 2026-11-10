@@ -10,12 +10,15 @@
 import random
 
 from quiz_game.default_data import create_default_quizzes
-from quiz_game.input_utils import read_int, read_text
+from quiz_game.input_utils import parse_int, read_int, read_optional_text, read_text
 from quiz_game.quiz import Quiz
 from quiz_game.storage import StateFileError, StateStorage
 
 LINE = "=" * 40
 THIN_LINE = "-" * 40
+
+HINT_KEYS = ("h", "ㅗ")  # 한글 자판 상태에서 h를 누르면 'ㅗ'가 입력되므로 함께 허용
+HINT_POINT = 0.5  # 힌트를 보고 맞힌 문제는 0.5문제로 계산
 
 
 class QuizGame:
@@ -90,26 +93,65 @@ class QuizGame:
         # 원본 목록 순서는 그대로 두고, 무작위로 고른 total개의 퀴즈를 출제한다.
         selected = random.sample(self.quizzes, total)
         print(f"\n📝 퀴즈를 시작합니다! (총 {total}문제, 순서는 무작위)")
+        print(f"💡 정답 대신 h를 입력하면 힌트를 볼 수 있어요. (힌트를 본 문제는 맞혀도 {HINT_POINT}문제로 계산)")
 
         correct_count = 0  # 맞힌 문제 수
+        points = 0.0       # 점수 계산용 (정답 1, 힌트 보고 정답 0.5)
+        hints_used = 0     # 힌트를 본 문제 수
         for number, quiz in enumerate(selected, start=1):
             print(THIN_LINE)
             quiz.display(number)
-            answer = read_int("정답 입력: ", 1, Quiz.CHOICE_COUNT)
+            answer, used_hint = self.ask_answer(quiz)
+            if used_hint:
+                hints_used += 1
             if quiz.is_correct(answer):
                 correct_count += 1
-                print("✅ 정답입니다!")
+                if used_hint:
+                    points += HINT_POINT
+                    print(f"✅ 정답입니다! (힌트 사용: {HINT_POINT}문제로 계산)")
+                else:
+                    points += 1
+                    print("✅ 정답입니다!")
             else:
                 print(f"❌ 오답입니다. 정답은 {quiz.answer}번 '{quiz.correct_choice}'입니다.")
             print()
 
-        self.show_result(correct_count, total)
+        self.show_result(correct_count, total, points, hints_used)
 
-    def show_result(self, correct_count, total):
+    def ask_answer(self, quiz):
+        """정답 번호를 입력받는다. h를 입력하면 힌트를 보여 준다.
+
+        (정답 번호, 힌트 사용 여부)를 돌려준다.
+        """
+        used_hint = False
+        while True:
+            raw = input("정답 입력 (힌트: h): ").strip()
+            if raw.lower() in HINT_KEYS:
+                if not quiz.has_hint():
+                    print("💡 이 문제에는 힌트가 없습니다.")
+                    continue
+                if not used_hint:
+                    used_hint = True
+                    print(f"💡 힌트: {quiz.hint}  (이 문제는 맞혀도 {HINT_POINT}문제로 계산)")
+                else:
+                    print(f"💡 힌트: {quiz.hint}")  # 다시 봐도 추가 차감 없음
+                continue
+
+            number, error = parse_int(raw, 1, Quiz.CHOICE_COUNT)
+            if error:
+                print(error)
+                continue
+            return number, used_hint
+
+    def show_result(self, correct_count, total, points=None, hints_used=0):
         """모든 문제를 푼 뒤 결과를 보여 주고, 최고 점수와 비교해 갱신한다. 점수를 돌려준다."""
-        score = round(correct_count / total * 100)
+        if points is None:
+            points = correct_count
+        score = round(points / total * 100)
         print(LINE)
         print(f"🏆 결과: {total}문제 중 {correct_count}문제 정답! ({score}점)")
+        if hints_used:
+            print(f"💡 힌트 사용: {hints_used}회 (힌트를 본 문제는 절반만 점수 인정)")
         if self.update_best_score(score):
             print("🎉 새로운 최고 점수입니다!")
             self.save_state()
@@ -131,9 +173,10 @@ class QuizGame:
         question = self.ask_new_question()
         choices = self.ask_choices()
         answer = read_int(f"정답 번호 (1-{Quiz.CHOICE_COUNT}): ", 1, Quiz.CHOICE_COUNT)
+        hint = read_optional_text("힌트 (없으면 그냥 Enter): ")
 
         # 퀴즈 등록 후 바로 파일에 저장
-        self.quizzes.append(Quiz(question, choices, answer))
+        self.quizzes.append(Quiz(question, choices, answer, hint))
         if self.save_state():
             print(f"\n✅ 퀴즈가 추가되었습니다! (총 {len(self.quizzes)}개)")
         else:

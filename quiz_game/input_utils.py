@@ -14,6 +14,11 @@ def read_text(prompt):
         print("⚠️ 빈 값은 입력할 수 없습니다. 내용을 입력하세요.")
 
 
+def read_optional_text(prompt):
+    """글자를 입력받는다. 그냥 Enter를 누르면 빈 문자열을 돌려준다. (선택 입력용)"""
+    return input(prompt).strip()
+
+
 def parse_int(raw, minimum, maximum):
     """입력 문자열을 검사해서 (숫자, None) 또는 (None, 오류 메시지)를 돌려준다."""
     guide = f"{minimum}-{maximum} 사이의 숫자를 입력하세요."

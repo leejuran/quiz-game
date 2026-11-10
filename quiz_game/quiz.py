@@ -2,11 +2,11 @@
 
 
 class Quiz:
-    """문제(question), 선택지(choices), 정답 번호(answer)를 가진 퀴즈 한 개."""
+    """문제(question), 선택지(choices), 정답 번호(answer), 힌트(hint)를 가진 퀴즈 한 개."""
 
     CHOICE_COUNT = 4  # 선택지는 항상 4개
 
-    def __init__(self, question, choices, answer):
+    def __init__(self, question, choices, answer, hint=""):
         # 잘못된 값으로 퀴즈가 만들어지지 않도록 먼저 검사한다.
         if not isinstance(question, str) or not question.strip():
             raise ValueError("문제는 비어 있지 않은 문자열이어야 합니다.")
@@ -20,15 +20,22 @@ class Quiz:
             raise ValueError("정답은 숫자(1~4)여야 합니다.")
         if not 1 <= answer <= self.CHOICE_COUNT:
             raise ValueError(f"정답은 1~{self.CHOICE_COUNT} 사이여야 합니다.")
+        if not isinstance(hint, str):
+            raise ValueError("힌트는 문자열이어야 합니다.")
 
         self.question = question.strip()
         self.choices = [choice.strip() for choice in choices]
         self.answer = answer  # 정답은 1~4 번호로 관리
+        self.hint = hint.strip()  # 힌트가 없으면 빈 문자열
 
     @property
     def correct_choice(self):
         """정답 번호에 해당하는 선택지 내용 (예: 3번 → '6개')."""
         return self.choices[self.answer - 1]
+
+    def has_hint(self):
+        """힌트가 있으면 True."""
+        return bool(self.hint)
 
     def display(self, number):
         """문제 번호, 문제, 선택지를 화면에 출력한다."""
@@ -49,11 +56,12 @@ class Quiz:
             "question": self.question,
             "choices": list(self.choices),
             "answer": self.answer,
+            "hint": self.hint,
         }
 
     @classmethod
     def from_dict(cls, data):
-        """파일에서 읽은 딕셔너리로 Quiz 객체를 만든다."""
+        """파일에서 읽은 딕셔너리로 Quiz 객체를 만든다. (hint가 없는 예전 데이터도 읽을 수 있다)"""
         if not isinstance(data, dict):
             raise TypeError("퀴즈 데이터는 딕셔너리여야 합니다.")
-        return cls(data["question"], data["choices"], data["answer"])
+        return cls(data["question"], data["choices"], data["answer"], data.get("hint", ""))
