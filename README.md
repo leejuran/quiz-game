@@ -214,3 +214,6 @@ quiz-game/
 - **커밋 메시지 규칙**: `Feat:` 기능 추가, `Fix:` 오류 수정, `Refactor:` 구조 개선, `Docs:` 문서, `Chore:` 설정
 - **브랜치 활용**: 퀴즈 풀기 기능은 `feature/play-quiz` 브랜치에서 개발한 뒤 `main`에 병합 (`git merge --no-ff`)
 - **사용한 Git 명령어**: `init`, `add`, `commit`, `push`, `checkout`, `merge`, `clone`, `pull`
+- **clone/pull 실습**: 이 줄은 복제한 저장소(quiz-game-clone)에서 추가한 뒤 push했습니다.
+
+
